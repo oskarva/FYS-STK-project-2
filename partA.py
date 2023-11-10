@@ -197,16 +197,22 @@ plot_etas(etas, MSEs, method_name, method_name + ".png")
 
 #Momentum
 method_name = "Momemtum"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = Momentum(eta, 0.1)
-    theta = fit(X, y, grad_cost_OLS, scheduler, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(min(MSEs))
+n_moms = 9
+mom_params = np.linspace(0.1, 1, n_moms)
+MSEs = np.zeros((n_etas, n_moms))
+
+for i, eta in enumerate(etas):
+    for j, mom in enumerate(mom_params):
+        scheduler = Momentum(eta, mom)
+        theta = fit(X, y, grad_cost_OLS, scheduler, epochs=epochs)
+        MSEs[i][j] = cost_OLS(y, X, theta)
+
+
+MSE_best_by_method.append(np.min(MSEs.flatten()))
 MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
+print(f"MSE {method_name}: {np.min(MSEs)}")
+plot_etas(etas, np.min(MSEs, axis=1), method_name, method_name + ".png")
 
 
 #Stochastic part

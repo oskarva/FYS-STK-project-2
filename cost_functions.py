@@ -1,7 +1,19 @@
 import autograd.numpy as np
 
 def CostOLS(target):
-    
+    """
+    Description:
+    ------------
+        Makes a Cost function for OLS with the target vector baked in for ease of derivating with respect to X.
+
+    Parameters:
+    ------------
+        I   target (np.ndarray): The target data, matrix with shape n x m
+
+    Returns:
+    ------------
+        I   func (Callable): Cost function. Takes in X and returns a float.
+    """
     def func(X):
         return (1.0 / target.shape[0]) * np.sum((target - X) ** 2)
 
@@ -9,7 +21,19 @@ def CostOLS(target):
 
 
 def CostLogReg(target):
+    """
+    Description:
+    ------------
+        Makes a Cost function for Logistic Regression with the target vector baked in for ease of derivating with respect to X.
 
+    Parameters:
+    ------------
+        I   target (np.ndarray): The target data, matrix with shape n x m
+
+    Returns:
+    ------------
+        I   func (Callable): Cost function. Takes in X and returns a float.
+    """
     def func(X):
         
         return -(1.0 / target.shape[0]) * np.sum(
@@ -20,7 +44,19 @@ def CostLogReg(target):
 
 
 def CostCrossEntropy(target):
-    
+    """
+    Description:
+    ------------
+        Makes a Cost function for Cross Entropy with the target vector baked in for ease of derivating with respect to X.
+
+    Parameters:
+    ------------
+        I   target (np.ndarray): The target data, matrix with shape n x m
+
+    Returns:
+    ------------
+        I   func (Callable): Cost function. Takes in X and returns a float.
+    """
     def func(X):
         return -(1.0 / target.size) * np.sum(target * np.log(X + 10e-10))
 
