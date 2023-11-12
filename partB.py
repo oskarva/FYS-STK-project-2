@@ -52,9 +52,10 @@ n_datapoints = 100
 x = np.random.rand(n_datapoints, 1)
 y = f(x) + 0.3*np.random.randn(n_datapoints, 1)
 
+#Split in train and test sets
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-
+#Define hyperparameters
 n_etas = 10
 etas = np.geomspace(10**(-7), 1, n_etas)
 n_lams = 10
@@ -68,7 +69,7 @@ dimensions = (1, 10, 1)
 
 #Keep track of best MSE by acctivation method
 MSE_method = []
-method_names =  [] #
+method_names =  [] 
 
 
 #Neural network with activation function sigmoid.
