@@ -197,7 +197,6 @@ plot_etas(etas, MSEs, method_name, method_name + ".png")
 
 #Momentum
 method_name = "Momemtum"
-
 n_moms = 9
 mom_params = np.linspace(0.1, 1, n_moms)
 MSEs = np.zeros((n_etas, n_moms))

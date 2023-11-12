@@ -158,11 +158,12 @@ y = f(x) + 0.3*np.random.randn(n_datapoints, 1)
 X = np.c_[np.ones(n_datapoints), x, x**2]
 
 n_etas = 10
-n_lams = 10
+n_lams = 9
 etas = [10**(-k) for k in range(n_etas)]
 lams = [10**(-k) for k in range(n_lams)]
 batches = 10
 epochs = 20
+n_methods = 8
 
 #Keep track of best achieved MSE
 MSE_best_by_method = []
@@ -178,7 +179,8 @@ for i, eta in enumerate(etas):
         #print(theta)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
+print(f"Best by method MSE {np.shape(np.asarray(MSE_best_by_method))}")
 MSE_method_names.append("Constant")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
@@ -192,7 +194,7 @@ for i, eta in enumerate(etas):
         theta = fit(X, y, grad_cost_Ridge_lam(lam), scheduler, epochs=epochs)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
 MSE_method_names.append("Momemtum")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
@@ -207,7 +209,7 @@ for i, eta in enumerate(etas):
         theta = fit(X, y, grad_cost_Ridge_lam(lam),scheduler, batches=batches, epochs=epochs)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
 MSE_method_names.append("Constant SGD")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
@@ -223,7 +225,7 @@ for i, eta in enumerate(etas):
         #print(theta)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
 MSE_method_names.append("Momemtum SGD")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
@@ -240,8 +242,8 @@ for i, eta in enumerate(etas):
         #print(theta)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
-MSE_method_names.append("Adagrad SGD")
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
+MSE_method_names.append("Adagrad")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
@@ -256,8 +258,8 @@ for i, eta in enumerate(etas):
         #print(theta)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
-MSE_method_names.append("Adagrad momemtum SGD")
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
+MSE_method_names.append("Adagrad mom")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
@@ -273,8 +275,8 @@ for i, eta in enumerate(etas):
         #print(theta)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
-MSE_method_names.append("RMSProp SGD")
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
+MSE_method_names.append("RMSProp")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
@@ -290,8 +292,8 @@ for i, eta in enumerate(etas):
         #print(theta)
         MSEs[i][j] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(np.min(MSEs))
-MSE_method_names.append("Adam SGD")
+MSE_best_by_method.append(np.min(MSEs, axis = 0))
+MSE_method_names.append("Adam")
 print(f"MSE momentum: {MSEs}")
 plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
@@ -305,7 +307,21 @@ path = Path(cwd) / "FigurePlots"
 if not path.exists():
     path.mkdir()
 
+plt.figure()
+ax = sns.heatmap(np.asarray(MSE_best_by_method),
+                  yticklabels=MSE_method_names, 
+                  xticklabels=lams,
+                  annot=np.asarray(MSE_best_by_method))
+ax.set(xlabel="Gradient descent methods", ylabel="Lambda value")
 
+plt.title("Best MSE error by gradient descent method for Ridge")
+#plt.xticks(rotation=-30)
+#plt.tight_layout()
+plt.savefig(path / "PartARidgeHeatMap.png")
+#plt.show()
+
+print(f"Best MSE array: {np.asarray(MSE_best_by_method)}")
+'''
 #Plot MSE by gradient method
 plt.figure()
 plt.bar(range(0, 2*len(MSE_method_names), 2), MSE_best_by_method,  tick_label =MSE_method_names)
@@ -313,6 +329,9 @@ plt.title("Best MSE error by gradient descent method for Ridge")
 plt.xticks(rotation=-30)
 plt.tight_layout()
 plt.savefig(path / "PartARidge.png")
+
+'''
+
 
 
 
