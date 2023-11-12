@@ -53,7 +53,7 @@ def grad_cost_Ridge_lam(lamb):
     '''
     Description:
     ------------
-    Gradient of Cost function for OLS regression with respect to theta variable evaluted at y, X, theta.
+    Makes a function with gradient in terms of y, X, theta for Ridge regression.
 
     Parameters:
     ------------
@@ -63,7 +63,7 @@ def grad_cost_Ridge_lam(lamb):
 
     Returns:
     ------------
-        I   grad(C) (np.ndarray): Gradient of cost function.
+        I   grad_cost_Ridge (Callable): Gradient function.
     '''
     def grad_cost_Ridge(y, X, theta):
         return 2/y.size * X.T @ ( (X @ theta) -y) + lamb * 2 * theta
@@ -75,9 +75,10 @@ def grad_cost_Ridge_lam(lamb):
 import os
 from pathlib import Path
 import seaborn as sns
+
+#Define path for saving plots
 cwd = os.getcwd()
 path = Path(cwd) / "FigurePlots" / "Gradienet_descent_MSE_Ridge"
-
 if not path.exists():
     path.mkdir()
 
@@ -100,7 +101,6 @@ def plot_etas_lams(etas, lams, MSEs, title, filename):
     '''
     plt.figure()
     ax = sns.heatmap(MSEs, xticklabels=etas, yticklabels=lams, annot=True, robust = True)
-    #sns.title(title)
     ax.set(xlabel="Lambda", ylabel="Etas")
     plt.title(title)
     plt.tight_layout()
@@ -132,7 +132,7 @@ def fit(X, y, grad_cost_func, scheduler, batches = 1, epochs = 100, seed = 13):
 
     for i in range(epochs):
         for i in range(batches):
-             # allows for minibatch gradient descent
+             # allows for minibatch gradient descent loops over all batches
             if i == batches - 1:
                  # If the for loop has reached the last batch, take all thats left
                 X_batch = X[i * batch_size :, :]
@@ -157,6 +157,7 @@ x = np.random.rand(n_datapoints, 1)
 y = f(x) + 0.3*np.random.randn(n_datapoints, 1)
 X = np.c_[np.ones(n_datapoints), x, x**2]
 
+#Define hyperparamaters to be used.
 n_etas = 10
 n_lams = 9
 etas = [10**(-k) for k in range(n_etas)]
@@ -168,6 +169,21 @@ n_methods = 8
 #Keep track of best achieved MSE
 MSE_best_by_method = []
 MSE_method_names = []
+
+'''
+Next part runs though different gradient descent methods including
+Not stochastic descent:
+Constant
+Momemtum
+
+Stochastic Gradient Descent:
+Constant
+Momemtum
+Adagrad
+Adagrad Momemtum
+RMSprop
+Adam
+'''
 
 # Constant 
 method_name = "Constant"
@@ -299,13 +315,13 @@ plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
 #Define path for plot
-import os
-from pathlib import Path
-cwd = os.getcwd()
 path = Path(cwd) / "FigurePlots"
 
 if not path.exists():
     path.mkdir()
+
+#Make heatmap with methods along on axis and lambda values along the other axis. The cells are the lowest Cost 
+#function (MSE) over all eta values.
 
 plt.figure()
 ax = sns.heatmap(np.asarray(MSE_best_by_method),
@@ -313,14 +329,13 @@ ax = sns.heatmap(np.asarray(MSE_best_by_method),
                   xticklabels=lams,
                   annot=np.asarray(MSE_best_by_method))
 ax.set(xlabel="Gradient descent methods", ylabel="Lambda value")
-
 plt.title("Best MSE error by gradient descent method for Ridge")
-#plt.xticks(rotation=-30)
-#plt.tight_layout()
 plt.savefig(path / "PartARidgeHeatMap.png")
-#plt.show()
 
+#Print array of all the best cost function value, minimized over eta value, axis are methods and lambda values.
 print(f"Best MSE array: {np.asarray(MSE_best_by_method)}")
+
+
 '''
 #Plot MSE by gradient method
 plt.figure()
@@ -329,7 +344,6 @@ plt.title("Best MSE error by gradient descent method for Ridge")
 plt.xticks(rotation=-30)
 plt.tight_layout()
 plt.savefig(path / "PartARidge.png")
-
 '''
 
 
