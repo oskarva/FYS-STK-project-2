@@ -39,14 +39,19 @@ data = load_breast_cancer()
 target = data["target"]
 target = np.reshape(target, (target.size, 1))
 X = data["data"]
-scaler = preprocessing.StandardScaler().fit(X)
 
 # Scale the data
+scaler = preprocessing.StandardScaler().fit(X)
 X_scaled = scaler.transform(X)
 
 # Split train and validation sets
-x_train, x_test, t_train, t_test = train_test_split(X_scaled, target, test_size=0.2)
 
+#x_train, x_test, t_train, t_test = train_test_split(X_scaled, target, test_size=0.2)
+
+#Crossvalidation
+from sklearn.model_selection import KFold
+n_folds = 5
+kf = KFold(n_splits=n_folds)
 
 # Define neural network
 n_featurs = np.shape(X_scaled)[1]
@@ -59,45 +64,55 @@ dimensions = (n_featurs, 30, 1)
 
 
 # Keep track of performance by eta
-MSEs_train = np.zeros(n_etas)
-accuracies_train = np.zeros(n_etas)
-MSEs_val = np.zeros(n_etas)
-accuracies_val = np.zeros(n_etas)
+MSEs_train = np.zeros((n_folds, n_etas))
+accuracies_train = np.zeros((n_folds, n_etas))
+MSEs_val = np.zeros((n_folds, n_etas))
+accuracies_val = np.zeros((n_folds, n_etas))
 
-# Keep track of predictions
+# Keep track of predictions with data
 pred_train = []
 pred_val = []
 
-for i, eta in enumerate(etas):
-    NN = FFNN(
-        dimensions,
-        hidden_func=sigmoid,
-        output_func=sigmoid,
-        cost_func=CostLogReg,
-        seed=13,
-    )
-    scores = NN.fit(
-        x_train,
-        t_train,
-        Adam(eta, 0.9, 0.99),
-        batches=batches,
-        epochs=epochs,
-        X_val=x_test,
-        t_val=t_test,
-    )
+data_train = []
+data_val = []
 
-    # Store results
-    MSEs_val[i] = scores["val_errors"][-1]
-    accuracies_val[i] = scores["val_accs"][-1]
-    MSEs_train[i] = scores["train_errors"][-1]
-    accuracies_train[i] = scores["train_accs"][-1]
+for i, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
+    for j, eta in enumerate(etas):
+        NN = FFNN(
+            dimensions,
+            hidden_func=sigmoid,
+            output_func=sigmoid,
+            cost_func=CostLogReg,
+            seed=13,
+        )
+        scores = NN.fit(
+            X_scaled[train_index],
+            target[train_index],
+            Adam(eta, 0.9, 0.99),
+            batches=batches,
+            epochs=epochs,
+            X_val=X_scaled[test_index],
+            t_val=target[test_index],
+        )
 
-    # Predictions
-    pred_train.append(NN.predict(x_train))
-    pred_val.append(NN.predict(x_test))
+        # Store results
+        MSEs_val[i][j] = scores["val_errors"][-1]
+        accuracies_val[i][j] = scores["val_accs"][-1]
+        MSEs_train[i][j] = scores["train_errors"][-1]
+        accuracies_train[i][j] = scores["train_accs"][-1]
+
+        # Predictions
+        if i == 0:
+            pred_train.append(NN.predict(X_scaled[train_index]))
+            pred_val.append(NN.predict(X_scaled[test_index]))
+            data_train.append(target[train_index])
+            data_val.append(target[test_index])
 
 # The model that predicted best.
-best_index = np.argmax(accuracies_val)
+print(f"\n The best acuracy for each fold of MSE over eta values: {np.max(accuracies_val, axis = 1)} \n")
+print(f"\n The mean acuracy for k folds for different eta values: {np.mean(accuracies_val, axis = 0)} \n")
+
+best_index = np.argmax(np.mean(accuracies_val, axis = 0))
 
 
 # Define path for saving figure
@@ -115,7 +130,7 @@ import matplotlib.pyplot as plt
 
 # Plot confusion matrix for validation set
 confusion_mat = confusion_matrix(
-    t_test.flatten(), pred_val[best_index].flatten(), normalize="true"
+    data_val[best_index].flatten(), pred_val[best_index].flatten(), normalize="true"
 )
 
 plt.figure()
@@ -126,7 +141,7 @@ plt.savefig(path / "neural_net_confusion.png")
 
 # Plot confusion matrix for training set
 confusion_mat = confusion_matrix(
-    t_train.flatten(), pred_train[best_index].flatten(), normalize="true"
+    data_train[best_index].flatten(), pred_train[best_index].flatten(), normalize="true"
 )
 
 plt.figure()
