@@ -5,6 +5,7 @@ second degree polynomial.
 
 For the stochastic part we use 10 batches. 
 
+We repeat this experiment for 5 different starting seeds and take an average for each method.
 """
 
 
@@ -71,7 +72,7 @@ def grad_cost_Ridge_lam(lamb):
     
     return grad_cost_Ridge
 
-#Plotting
+#Define path for plot
 import os
 from pathlib import Path
 cwd = os.getcwd()
@@ -101,6 +102,7 @@ def plot_etas(etas, MSEs, title, filename):
     plt.xscale("log")
     plt.title(title)
     plt.savefig(path / filename)
+    plt.close()
 
 
 
@@ -147,160 +149,180 @@ def fit(X, y, grad_cost_func, scheduler, batches = 1, epochs = 100, seed = 13):
     return theta
             
 
-# Data generation
+#Function we base our data on
 def f(x):
     return -3+5 * x -3*x**2
 
-n_datapoints = 100
-x = np.random.rand(n_datapoints, 1)
-y = f(x) + 0.1*np.random.randn(n_datapoints, 1)
-X = np.c_[np.ones(n_datapoints), x, x**2]
-
-n_etas = 10
-etas = np.geomspace(10**(-5), 2, n_etas)
-epochs = 20
-batches = 10 #If stochastic, use 10 minibatches
-
-
-#Keep track of best achieved MSE
-MSE_best_by_method = []
+#Keep track of MSE
+MSE_best_by_method_all = []
 MSE_method_names = []
 
-'''
-Next part runs though different gradient descent methods including
-Not stochastic:
-Constant
-Momemtum
+#Run the experiment for 5 different starting seeds.
+seeds = range(5)
+for seed in seeds:
 
-Stochastic gradient descenet:
-Constant
-Momemtum
-Adagrad
-Adagrad Momemtum
-RMSprop
-Adam
-'''
+    # Data generation
+    np.random.seed(seed)
+    n_datapoints = 100
+    x = np.random.rand(n_datapoints, 1)
+    y = f(x) + 0.1*np.random.randn(n_datapoints, 1)
+    X = np.c_[np.ones(n_datapoints), x, x**2]
+
+    n_etas = 10
+    etas = np.geomspace(10**(-5), 2, n_etas)
+    epochs = 20
+    batches = 10 #If stochastic, use 10 minibatches
 
 
-# Constant 
-method_name = "Constant"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = Constant(eta)
-    theta = fit(X, y, grad_cost_OLS, scheduler, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
+    #Keep track of best achieved MSE this run
+    MSE_best_by_method = []
+    MSE_method_names = []
 
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
+    '''
+    Next part runs though different gradient descent methods including
+    Not stochastic:
+    Constant
+    Momemtum
 
-#Momentum
-method_name = "Momemtum"
-n_moms = 9
-mom_params = np.linspace(0.1, 1, n_moms)
-MSEs = np.zeros((n_etas, n_moms))
+    Stochastic gradient descenet:
+    Constant
+    Momemtum
+    Adagrad
+    Adagrad Momemtum
+    RMSprop
+    Adam
+    '''
 
-for i, eta in enumerate(etas):
-    for j, mom in enumerate(mom_params):
-        scheduler = Momentum(eta, mom)
+
+    # Constant 
+    method_name = "Constant"
+    MSEs = [0] * n_etas
+    for i, eta in enumerate(etas):
+        scheduler = Constant(eta)
         theta = fit(X, y, grad_cost_OLS, scheduler, epochs=epochs)
-        MSEs[i][j] = cost_OLS(y, X, theta)
+        MSEs[i] = cost_OLS(y, X, theta)
+
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
+
+    #Momentum
+    method_name = "Momemtum"
+    n_moms = 9
+    mom_params = np.linspace(0.1, 1, n_moms)
+    MSEs = np.zeros((n_etas, n_moms))
+
+    for i, eta in enumerate(etas):
+        for j, mom in enumerate(mom_params):
+            scheduler = Momentum(eta, mom)
+            theta = fit(X, y, grad_cost_OLS, scheduler, epochs=epochs)
+            MSEs[i][j] = cost_OLS(y, X, theta)
 
 
-MSE_best_by_method.append(np.min(MSEs.flatten()))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {np.min(MSEs)}")
-plot_etas(etas, np.min(MSEs, axis=1), method_name, method_name + ".png")
+    MSE_best_by_method.append(np.min(MSEs.flatten()))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {np.min(MSEs)}")
+    plot_etas(etas, np.min(MSEs, axis=1), method_name, method_name + ".png")
 
 
-#Stochastic part
+    #Stochastic part
 
-#Stochastic constant
-method_name = "Constant_SGD"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = Constant(eta)
-    theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
+    #Stochastic constant
+    method_name = "Constant_SGD"
+    MSEs = [0] * n_etas
+    for i, eta in enumerate(etas):
+        scheduler = Constant(eta)
+        theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
+        MSEs[i] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
-
-
-#SGD with momemtum
-method_name = "Momemtum_SGD"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = Momentum(eta, 0.1)
-    theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
-
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
 
 
-# 4 Adagrad no momemtum
-method_name = "Adagrad"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = Adagrad(eta)
-    theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
+    #SGD with momemtum
+    method_name = "Momemtum_SGD"
+    MSEs = [0] * n_etas
+    for i, eta in enumerate(etas):
+        scheduler = Momentum(eta, 0.1)
+        theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
+        MSEs[i] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
-
-
-#Adagrad with momemtum
-method_name = "AdagradMomemtum"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = AdagradMomentum(eta, 0.2)
-    theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
-
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
 
 
+    # 4 Adagrad no momemtum
+    method_name = "Adagrad"
+    MSEs = [0] * n_etas
+    for i, eta in enumerate(etas):
+        scheduler = Adagrad(eta)
+        theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
+        MSEs[i] = cost_OLS(y, X, theta)
 
-# 5 RSMProp
-MSEs = [0] * n_etas
-method_name = "RMSprop"
-for i, eta in enumerate(etas):
-    scheduler = RMS_prop(eta, 0.9)
-    theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
 
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
+
+    #Adagrad with momemtum
+    method_name = "AdagradMomemtum"
+    MSEs = [0] * n_etas
+    for i, eta in enumerate(etas):
+        scheduler = AdagradMomentum(eta, 0.2)
+        theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
+        MSEs[i] = cost_OLS(y, X, theta)
+
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
 
 
 
-# Adam
-method_name = "Adam"
-MSEs = [0] * n_etas
-for i, eta in enumerate(etas):
-    scheduler = Adam(eta, 0.9, 0.99)
-    theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
-    MSEs[i] = cost_OLS(y, X, theta)
+    # 5 RSMProp
+    MSEs = [0] * n_etas
+    method_name = "RMSprop"
+    for i, eta in enumerate(etas):
+        scheduler = RMS_prop(eta, 0.9)
+        theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
+        MSEs[i] = cost_OLS(y, X, theta)
 
-MSE_best_by_method.append(min(MSEs))
-MSE_method_names.append(method_name)
-print(f"MSE {method_name}: {MSEs}")
-plot_etas(etas, MSEs, method_name, method_name + ".png")
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
 
+
+
+    # Adam
+    method_name = "Adam"
+    MSEs = [0] * n_etas
+    for i, eta in enumerate(etas):
+        scheduler = Adam(eta, 0.9, 0.99)
+        theta = fit(X, y, grad_cost_OLS, scheduler,batches =batches, epochs=epochs)
+        MSEs[i] = cost_OLS(y, X, theta)
+
+    MSE_best_by_method.append(min(MSEs))
+    MSE_method_names.append(method_name)
+    print(f"MSE {method_name}: {MSEs}")
+    plot_etas(etas, MSEs, method_name, method_name + ".png")
+
+    print(f"MSE list {MSE_best_by_method}")
+    MSE_best_by_method_all.append(MSE_best_by_method)
+
+
+#Print array of best MSE for each method and run.
+MSE_best_by_method = np.asanyarray(MSE_best_by_method_all)
+print(MSE_best_by_method)
+
+#Average over all the runs.
+MSE_best_by_method = np.mean(MSE_best_by_method, axis=0)
 
 #Define path for plotting
 path = Path(cwd) / "FigurePlots"
@@ -308,10 +330,10 @@ if not path.exists():
     path.mkdir()
 
 
-#Plots the best achieved MSE by gradient method
+#Plots the average best achieved MSE by gradient method
 plt.figure()
 plt.bar(range(0, 2*len(MSE_method_names), 2), MSE_best_by_method,  tick_label =MSE_method_names)
-plt.title("Best MSE error by gradient descent method OLS")
+plt.title("Average best MSE error by gradient descent method OLS")
 plt.xticks(rotation=-30)
 plt.tight_layout()
 plt.savefig(path / "PartAOLS.png")
