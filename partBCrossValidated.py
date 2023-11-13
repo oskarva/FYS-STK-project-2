@@ -11,6 +11,10 @@ from activation_functions import *
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
+import seaborn as sns
+
+sns.set_theme()
+
 #Define path for saving figures.
 import os
 from pathlib import Path

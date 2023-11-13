@@ -76,6 +76,9 @@ import os
 from pathlib import Path
 import seaborn as sns
 
+sns.set_theme()
+
+
 #Define path for saving plots
 cwd = os.getcwd()
 path = Path(cwd) / "FigurePlots" / "Gradienet_descent_MSE_Ridge"
@@ -355,8 +358,7 @@ plt.savefig(path / "PartARidgeHeatMap.png")
 #Print array of all the best cost function value, minimized over eta value, axis are methods and lambda values.
 print(f"Best MSE array: {np.asarray(MSE_best_by_method)}")
 
-
-'''
+"""
 #Plot MSE by gradient method
 plt.figure()
 plt.bar(range(0, 2*len(MSE_method_names), 2), MSE_best_by_method,  tick_label =MSE_method_names)
@@ -364,8 +366,6 @@ plt.title("Best MSE error by gradient descent method for Ridge")
 plt.xticks(rotation=-30)
 plt.tight_layout()
 plt.savefig(path / "PartARidge.png")
-'''
-
-
+"""
 
 
