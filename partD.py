@@ -174,3 +174,16 @@ sns.heatmap(confusion_mat, annot=True)
 plt.title("Confusion matrix cancer data. \n Training set for neural network")
 plt.savefig(path / "neural_net_confusion_train.png")
 plt.show()
+
+
+DNN_score_mean = np.mean(DNN_score, axis=0)
+accuracies_val_mean = np.mean(accuracies_val, axis = 0)
+
+
+print(f"\n Acuraccy by eta values, average over folds. Sklearn: {DNN_score_mean}")
+print(f"\n Acuraccy by eta values, average over folds. Own neural network: {accuracies_val_mean}")
+print(f"\n The best achieved accuracy by sklearn was {np.max(DNN_score_mean)}")
+print(f"\n The best achieved accuracy by neural network was {np.max(accuracies_val_mean)}")
+
+
+
