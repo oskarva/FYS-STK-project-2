@@ -55,12 +55,15 @@ kf = KFold(n_splits=n_folds)
 
 # Define neural network
 n_featurs = np.shape(X_scaled)[1]
-n_etas = 10
-etas = np.geomspace(0.000001, 0.1, n_etas)
+n_etas = 7
+etas = np.geomspace(0.0001, 0.1, n_etas)
 epochs = 100
 batches = 10
+
+lmbd = 0
 # Topology of network
-dimensions = (n_featurs, 30, 1)
+n_hidden_neurons = 30
+dimensions = (n_featurs, n_hidden_neurons, 1)
 
 
 # Keep track of performance by eta
@@ -91,6 +94,7 @@ for i, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
             Adam(eta, 0.9, 0.99),
             batches=batches,
             epochs=epochs,
+            lam=lmbd,
             X_val=X_scaled[test_index],
             t_val=target[test_index],
         )
@@ -115,6 +119,27 @@ print(f"\n The mean acuracy for k folds for different eta values: {np.mean(accur
 best_index = np.argmax(np.mean(accuracies_val, axis = 0))
 
 
+#Same test but now with sk-learn
+from sklearn.neural_network import MLPClassifier
+
+DNN_scikit = np.zeros((n_folds, n_etas), dtype=object)
+DNN_score = np.zeros((n_folds, n_etas))
+
+for i, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
+    for j, eta in enumerate(etas):
+        dnn = MLPClassifier(hidden_layer_sizes=(n_hidden_neurons), activation='logistic',
+                            alpha=lmbd, learning_rate_init=eta, max_iter=10000)
+        dnn.fit(X_scaled[train_index], target[train_index].ravel())
+        
+        DNN_scikit[i][j] = dnn
+        
+        print("Learning rate  = ", eta)
+        print("Lambda = ", lmbd)
+        print("Accuracy score on test set: ", dnn.score(X_scaled[test_index], target[test_index]))
+        DNN_score[i][j] = dnn.score(X_scaled[test_index], target[test_index])
+        print()
+
+print(np.mean(DNN_score, axis=0))
 # Define path for saving figure
 from pathlib import Path
 import os
