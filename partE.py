@@ -28,8 +28,6 @@ X = data["data"]
 scaler = preprocessing.StandardScaler().fit(X)
 X_scaled = scaler.transform(X)
 
-#Split train and validation sets
-#x_train, x_test, t_train, t_test = train_test_split(X_scaled, target, test_size=0.2)
 
 #Crossvalidation
 from sklearn.model_selection import KFold
@@ -40,9 +38,9 @@ kf = KFold(n_splits=n_folds)
 n_featurs = np.shape(data["data"])[1]
 n_etas = 10
 etas = np.geomspace(0.0001, 0.1, n_etas)
-epochs = 100
+epochs = 60
 batches = 10
-lmbd = 0.0001
+lmbd = 0.01
 
 #Topology of nerual network. Here, no hidden layer, so it just reduces to a logistic regresssion.
 dimensions = (n_featurs, 1)
@@ -70,7 +68,7 @@ for j, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
     t_test = target[test_index]
     for i, eta in enumerate(etas):
         NN = FFNN(dimensions, hidden_func=sigmoid, output_func=sigmoid, cost_func=CostLogReg, seed=13)
-        scores = NN.fit(x_train, t_train, Adam(eta, 0.9, 0.99), batches = batches, epochs=epochs, lam=lmbd, X_val=x_test, t_val=t_test)
+        scores = NN.fit(x_train, t_train, AdagradMomentum(eta, 0.9), batches = batches, epochs=epochs, lam=lmbd, X_val=x_test, t_val=t_test)
         
         #Store results
         MSEs_val[j][i] = scores["val_errors"][-1]
@@ -83,10 +81,16 @@ for j, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
             confusion_matrices_train[i] = confusion_matrix(t_train, NN.predict(x_train), normalize="true")
 
 
-#The model that predicted best on average over the folds.
+
+print(f"\nThe beset validation acurcary over all folds and etas: {np.max(accuracies_val)}")
+print(f"\n The best acuracy for each fold of MSE over eta values: {np.max(accuracies_val, axis = 1)} \n")
+print(f"\n The mean acuracy for k folds for different eta values: {np.mean(accuracies_val, axis = 0)} \n")
+print(f"\n \nThe best val accuracy over folds: {np.max(np.mean(accuracies_val, axis = 0))}")
+
+
 accuracies_val_mean = np.mean(accuracies_val, axis = 0)
 best_index = np.argmax(accuracies_val_mean)
-print(f"\n Best average acuraccy across folds is:  {np.max(accuracies_val_mean)} \n achieved by eta value: {etas[best_index]}")
+#print(f"\n Best average acuraccy across folds is:  {np.max(accuracies_val_mean)} \n achieved by eta value: {etas[best_index]}")
 
 
 #Define path for saving figure
@@ -103,11 +107,12 @@ import matplotlib.pyplot as plt
 
 #Plot confusion matrix for validation set
 #confusion_mat = confusion_matrix(t_test.flatten(), pred_val[best_index].flatten(), normalize="true")
-
+#print(f"Acuraccies val set best index {accuracies_val[:, best_index]}")
 plt.figure()
 sns.heatmap(confusion_matrices_val[best_index], annot=True)
 plt.title("Confusion matrix cancer data. \n Validation set for logistic regression")
 plt.savefig(path / "logistic_reg_confusion.png")
+plt.show()
 plt.close()
 
 

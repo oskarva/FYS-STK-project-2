@@ -9,27 +9,7 @@ from activation_functions import *
 import numpy as np
 from sklearn.datasets import load_breast_cancer
 from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
 
-
-def onehot(target: np.ndarray):
-    """
-    Description:
-    ------------
-    This functions turns target data which is a classification data and turns into a onehot vector.
-    Example turn 3 -> (0, 0, 1, 0, ..., 0)
-
-    Parameters:
-    ------------
-        I   target (np.ndarray): Target data, vector shape (n), taking  values {1, 2, ..., k}
-
-    Returns:
-    ------------
-        I   onehot (np.ndarray): Transformed target data in onehot form, matrix shape (n, k)
-    """
-    onehot = np.zeros((target.size, target.max() + 1))
-    onehot[np.arange(target.size), target] = 1
-    return onehot
 
 
 np.random.seed(2023)
@@ -44,10 +24,6 @@ X = data["data"]
 scaler = preprocessing.StandardScaler().fit(X)
 X_scaled = scaler.transform(X)
 
-# Split train and validation sets
-
-#x_train, x_test, t_train, t_test = train_test_split(X_scaled, target, test_size=0.2)
-
 #Crossvalidation
 from sklearn.model_selection import KFold
 n_folds = 5
@@ -59,8 +35,8 @@ n_etas = 7
 etas = np.geomspace(0.0001, 0.1, n_etas)
 epochs = 100
 batches = 10
-
 lmbd = 0
+
 # Topology of network
 n_hidden_neurons = 30
 dimensions = (n_featurs, n_hidden_neurons, 1)
@@ -72,13 +48,13 @@ accuracies_train = np.zeros((n_folds, n_etas))
 MSEs_val = np.zeros((n_folds, n_etas))
 accuracies_val = np.zeros((n_folds, n_etas))
 
-# Keep track of predictions with data
+# Keep track of predictions and the training and validation sets used
 pred_train = []
 pred_val = []
-
 data_train = []
 data_val = []
 
+#Run through crossvalidation and tuning of eta
 for i, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
     for j, eta in enumerate(etas):
         NN = FFNN(
@@ -113,8 +89,10 @@ for i, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
             data_val.append(target[test_index])
 
 # The model that predicted best.
+print(f"The beset validation acurcary over all folds and etas: {np.max(accuracies_val)}")
 print(f"\n The best acuracy for each fold of MSE over eta values: {np.max(accuracies_val, axis = 1)} \n")
 print(f"\n The mean acuracy for k folds for different eta values: {np.mean(accuracies_val, axis = 0)} \n")
+print(f"The best val accuracy over folds: {np.max(np.mean(accuracies_val, axis = 0))}")
 
 best_index = np.argmax(np.mean(accuracies_val, axis = 0))
 
@@ -139,7 +117,7 @@ for i, (train_index, test_index) in  enumerate(kf.split(X_scaled, target)):
         DNN_score[i][j] = dnn.score(X_scaled[test_index], target[test_index])
         print()
 
-print(np.mean(DNN_score, axis=0))
+#print(np.mean(DNN_score, axis=0))
 # Define path for saving figure
 from pathlib import Path
 import os
