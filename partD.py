@@ -1,5 +1,6 @@
 """
-This code uses a neural network to predict a good or bad case with the Wisconsin Cancer Data.
+This code uses a neural network to predict a benign or malignent tumors from the Wisconsin Cancer Data.
+We first implent the network with the class from neural_network.py and then a SK-learn implementation.
 """
 import seaborn as sns
 from neural_network import FFNN
@@ -29,12 +30,13 @@ from sklearn.model_selection import KFold
 n_folds = 5
 kf = KFold(n_splits=n_folds)
 
-# Define neural network
+# Define parameters
 n_featurs = np.shape(X_scaled)[1]
 n_etas = 7
 etas = np.geomspace(0.0001, 0.1, n_etas)
 epochs = 100
 batches = 10
+#Lambda values tested manually in a logspace ranging from 0 to 1. 0 gave the best results.
 lmbd = 0
 
 # Topology of network
@@ -160,8 +162,8 @@ accuracies_val_mean = np.mean(accuracies_val, axis = 0)
 
 print(f"\n Acuraccy by eta values, average over folds. Sklearn: {DNN_score_mean}")
 print(f"\n Acuraccy by eta values, average over folds. Own neural network: {accuracies_val_mean}")
-print(f"\n The best achieved accuracy by sklearn was {np.max(DNN_score_mean)}")
-print(f"\n The best achieved accuracy by neural network was {np.max(accuracies_val_mean)}")
+print(f"\n The best achieved accuracy by sklearn was {np.round(np.max(DNN_score_mean), decimals=4)}")
+print(f"\n The best achieved accuracy by neural network was {np.round(np.max(accuracies_val_mean), decimals= 4)}")
 
 
 
