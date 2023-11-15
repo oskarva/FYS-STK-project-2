@@ -10,6 +10,7 @@ from schedulers import *
 from activation_functions import *
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import time
 
 import seaborn as sns
 
@@ -85,11 +86,16 @@ method_names =  []
 #Neural network with activation function sigmoid.
 method_name= "Sigmoid"
 MSEs = np.zeros((n_folds, n_etas))
+t0 = time.time()
 for i, (train_index, test_index) in  enumerate(kf.split(x, y)):
     for j, eta in enumerate(etas):
         NN = FFNN(dimensions, hidden_func=sigmoid, output_func=identity, cost_func=CostOLS, seed=seed)
         scores = NN.fit(x[train_index], y[train_index], RMS_prop(eta, 0.9), batches=batches, epochs=epochs, X_val = x[test_index], t_val = y[test_index])
         MSEs[i][j] = np.min(scores["val_errors"])
+t1 = time.time()
+total = t1-t0
+
+print(f"Time for Sigmoid = {total}")
 
 plot_etas(etas, np.mean(MSEs, axis=0), method_name, method_name + ".png")
 print(f'Best over folds: {np.min(MSEs, axis=1)}')
@@ -101,11 +107,16 @@ print(f"\n Best MSE train sigmoid is {np.min(MSEs)}")
 #Neural network with activation function RELU
 method_name= "RELU"
 MSEs = np.zeros((n_folds, n_etas))
+t0 = time.time()
 for i, (train_index, test_index) in  enumerate(kf.split(x, y)):
     for j, eta in enumerate(etas):
         NN = FFNN(dimensions, hidden_func=RELU, output_func=identity, cost_func=CostOLS, seed=seed)
         scores = NN.fit(x[train_index], y[train_index], RMS_prop(eta, 0.9), batches=batches, epochs=epochs, X_val = x[test_index], t_val = y[test_index])
         MSEs[i][j] = np.min(scores["val_errors"])
+t1 = time.time()
+total = t1-t0
+
+print(f"Time for RELU = {total}")
 
 plot_etas(etas, np.mean(MSEs, axis=0), method_name, method_name + ".png")
 print(f'Best over folds: {np.min(MSEs, axis=1)}')
@@ -118,12 +129,17 @@ print(f"\n Best MSE train RELU is {np.min(MSEs)}")
 #Neural network with activation function Leaky RELU
 method_name= "Leaky_RELU"
 MSEs = np.zeros((n_folds, n_etas))
+t0 = time.time()
 for i, (train_index, test_index) in  enumerate(kf.split(x, y)):
     print(f"Fold {i} \n")
     for j, eta in enumerate(etas):
         NN = FFNN(dimensions, hidden_func=LRELU, output_func=identity, cost_func=CostOLS, seed=seed)
         scores = NN.fit(x[train_index], y[train_index], RMS_prop(eta, 0.9), batches=batches, epochs=epochs, X_val = x[test_index], t_val = y[test_index])
         MSEs[i][j] = np.min(scores["val_errors"])
+t1 = time.time()
+total = t1-t0
+
+print(f"Time for Leaky RELU = {total}")
 
 plot_etas(etas, np.mean(MSEs, axis=0), method_name, method_name + ".png")
 print(f'Best over folds: {np.min(MSEs, axis=1)}')
@@ -137,13 +153,17 @@ print(f"\n Best MSE train LRELU is {np.min(MSEs)}")
 method_name = "OLS_regression"
 from OLS_regression import ols_regression
 MSEs = np.zeros(n_folds)
+t0 = time.time()
 for i, (train_index, test_index) in  enumerate(kf.split(x, y)):
     X_train = np.c_[np.ones(x[train_index].size), x[train_index], x[train_index]**2]
     X_test = np.c_[np.ones(x[test_index].size), x[test_index], x[test_index]**2]
     pred_train, pred_val, thetas = ols_regression(X_train, X_test, y[train_index])
 
     MSEs[i] = CostOLS(y[test_index])(pred_val)
+t1 = time.time()
+total = t1-t0
 
+print(f"Time for Ols regression = {total}")
 MSE_method.append(np.mean(MSEs))
 method_names.append(method_name)
 
