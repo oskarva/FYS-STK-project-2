@@ -31,23 +31,6 @@ def cost_OLS(y, X, theta):
     '''
     return 1/y.size * np.sum((y - X @ theta)**2)
 
-def grad_cost_OLS(y, X, theta):
-    '''
-    Description:
-    ------------
-    Gradient of Cost function for OLS regression with respect to theta variable evaluted at y, X, theta.
-
-    Parameters:
-    ------------
-        I   y (np.ndarray): The target vector, with length n
-        II  X (np.ndarray): The design matrix, with n rows of p features each
-        III theta (np.ndarray): The regressin parameters, with length p
-
-    Returns:
-    ------------
-        I   grad(C) (np.ndarray): Gradient of cost function.
-    '''
-    return 2/y.size * X.T @ ((X @ theta) - y)
 
 def grad_cost_Ridge_lam(lamb):
     '''
@@ -78,7 +61,6 @@ import seaborn as sns
 
 sns.set_theme()
 
-
 #Define path for saving plots
 cwd = os.getcwd()
 path = Path(cwd) / "FigurePlots" / "Gradienet_descent_MSE_Ridge"
@@ -89,14 +71,14 @@ def plot_etas_lams(etas, lams, MSEs, title, filename):
     '''
     Description:
     ------------
-    Function for plotting MSE by eta values and lambda values.
+        Function for plotting MSE by eta values and lambda values.
     Parameters:
     ------------
         I   etas list(floats): eta values tested
         II  lams list(floats): lambda values tested
         III  MSEs list(floats): MSE for the eta values
-        IV title str: Title for plot
-        V filename str | Path: path for saving figure
+        IV title (str): Title for plot
+        V filename (str) | Path: path for saving figure
 
     Returns:
     ------------
@@ -114,16 +96,19 @@ def fit(X, y, grad_cost_func, scheduler, batches = 1, epochs = 100, seed = 13):
     '''
     Description:
     ------------
-    Function for fitting regressin parameters.
+        Function for fitting regression parameters. Does a gradient descent with choosen method.
 
     Parameters:
     ------------
         I   X (np.ndarray): The design matrix, with n rows of p features each
         II  y (np.ndarray): The target vector, with length n
-        III grad_cost_func Callable: gradient of cost function.
-        IV batches  int=1: Number of minibatches to split data into. If 1, just normal gradient descent
-        V epochs int=100: Number of iterations to do.
-        VI seed int=13: Seed to inititalze random numbers.
+        III grad_cost_func (Callable): gradient of cost function.
+
+    Optional Parameters:
+    ------------
+        IV batches  (int): Number of minibatches to split data into. If 1, just normal gradient descent
+        V epochs (int): Number of iterations to do.
+        VI seed (int): Seed to inititalze random numbers.
 
     Returns:
     ------------
@@ -152,24 +137,38 @@ def fit(X, y, grad_cost_func, scheduler, batches = 1, epochs = 100, seed = 13):
     return theta
             
 
-# Data
+
 def f(x):
+    '''
+    Description:
+    ------------
+    Second degree polynomial
+
+    Parameters:
+    ------------
+        I   x (np.ndarray): X values
+    Returns:
+    ------------
+        I   f(x) (np.ndarray): Function values
+    '''
     return -3+5 * x -3*x**2
 
 #Keep track of MSE over all runs
 MSE_best_by_method_all = []
 MSE_method_names = []
 
+
+#Run experiment for 5 different seeds.
 seeds = range(5)
 for seed in seeds:
     np.random.seed(seed)   
 
     n_datapoints = 100
     x = np.random.rand(n_datapoints, 1)
-    y = f(x) + 0.3*np.random.randn(n_datapoints, 1)
+    y = f(x) + 0.1*np.random.randn(n_datapoints, 1)
     X = np.c_[np.ones(n_datapoints), x, x**2]
 
-    #Define hyperparamaters to be used.
+    #Define hyperparameters to be used.
     n_etas = 10
     n_lams = 9
     etas = [10**(-k) for k in range(n_etas)]
@@ -177,8 +176,9 @@ for seed in seeds:
     batches = 10
     epochs = 20
     n_methods = 8
+    mom = 0.9
 
-    #Keep track of best achieved MSE
+    #Keep track of best achieved MSE this run
     MSE_best_by_method = []
     MSE_method_names = []
 
@@ -208,23 +208,23 @@ for seed in seeds:
             MSEs[i][j] = cost_OLS(y, X, theta)
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
-    print(f"Best by method MSE {np.shape(np.asarray(MSE_best_by_method))}")
     MSE_method_names.append("Constant")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE constant: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
+
 
     #Momentum
     method_name = "Momemtum"
     MSEs = np.zeros((n_etas, n_lams))
     for i, eta in enumerate(etas):
         for j, lam in enumerate(lams):
-            scheduler = Momentum(eta, 0.1)
+            scheduler = Momentum(eta, mom)
             theta = fit(X, y, grad_cost_Ridge_lam(lam), scheduler, epochs=epochs)
             MSEs[i][j] = cost_OLS(y, X, theta)
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("Momemtum")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -239,7 +239,7 @@ for seed in seeds:
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("Constant SGD")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -248,14 +248,14 @@ for seed in seeds:
     MSEs = np.zeros((n_etas, n_lams))
     for i, eta in enumerate(etas):
         for j, lam in enumerate(lams):
-            scheduler = Momentum(eta, 0.1)
+            scheduler = Momentum(eta, mom)
             theta = fit(X, y, grad_cost_Ridge_lam(lam),scheduler, batches=batches, epochs=epochs)
             #print(theta)
             MSEs[i][j] = cost_OLS(y, X, theta)
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("Momemtum SGD")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -272,7 +272,7 @@ for seed in seeds:
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("Adagrad")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -281,14 +281,14 @@ for seed in seeds:
     MSEs = np.zeros((n_etas, n_lams))
     for i, eta in enumerate(etas):
         for j, lam in enumerate(lams):
-            scheduler = AdagradMomentum(eta, 0)
+            scheduler = AdagradMomentum(eta, mom)
             theta = fit(X, y, grad_cost_Ridge_lam(lam),scheduler, batches=batches, epochs=epochs)
             #print(theta)
             MSEs[i][j] = cost_OLS(y, X, theta)
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("Adagrad mom")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -305,7 +305,7 @@ for seed in seeds:
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("RMSProp")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -322,7 +322,7 @@ for seed in seeds:
 
     MSE_best_by_method.append(np.min(MSEs, axis = 0))
     MSE_method_names.append("Adam")
-    print(f"MSE momentum: {MSEs}")
+    #print(f"MSE momentum: {MSEs}")
     plot_etas_lams(etas, lams, MSEs, method_name, method_name + ".png")
 
 
@@ -330,12 +330,16 @@ for seed in seeds:
     MSE_best_by_method_all.append(MSE_best_by_method)
 
 
-MSE_best_by_method = np.asarray(MSE_best_by_method_all)
-print(np.shape(MSE_best_by_method))
-print(f"Array of MSE by method and run {MSE_best_by_method}")
 
-#Average over all the runs
+MSE_best_by_method = np.asarray(MSE_best_by_method_all)
+
+#Average over all the different starting seeds
 MSE_best_by_method = np.mean(MSE_best_by_method, axis=0)
+
+#Print array of all the best cost function value, minimized over eta value, axis are methods and lambda values.
+print(f"\n The methods tested are: \n {MSE_method_names}")
+print(f"Best MSE array: \n {np.around(MSE_best_by_method, decimals = 3)}")
+
 
 #Define path for plot
 path = Path(cwd) / "FigurePlots"
@@ -355,17 +359,6 @@ ax.set(xlabel="Gradient descent methods", ylabel="Lambda value")
 plt.title("Best MSE error by gradient descent method for Ridge")
 plt.savefig(path / "PartARidgeHeatMap.png")
 
-#Print array of all the best cost function value, minimized over eta value, axis are methods and lambda values.
-print(f"Best MSE array: {np.asarray(MSE_best_by_method)}")
 
-"""
-#Plot MSE by gradient method
-plt.figure()
-plt.bar(range(0, 2*len(MSE_method_names), 2), MSE_best_by_method,  tick_label =MSE_method_names)
-plt.title("Best MSE error by gradient descent method for Ridge")
-plt.xticks(rotation=-30)
-plt.tight_layout()
-plt.savefig(path / "PartARidge.png")
-"""
 
 
